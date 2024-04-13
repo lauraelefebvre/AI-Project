@@ -46,3 +46,8 @@ def initialPop(imgShape, nIndividuals = 8):
     #randomly generating inital population chromosome gene values
     init_population[indv_num, :] = randint(0, 2, M * N)
   return init_population
+
+#fitness function
+def fitness_fun(target_chrom, indv_chrom):
+  
+  return error
