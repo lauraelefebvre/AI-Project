@@ -26,4 +26,4 @@ cv2.waitKey(0)
 
 def img2vector(img_arr):
   fv = np.reshape(a = img_arr, newshape = (functools.reduce(operator.mul img_arr.shape)))
-  
+  return fv
