@@ -6,6 +6,7 @@ from random import randint, seed
 import functools
 import operator
 import numpy as np
+import itertools
 
 #GLOBAL VARIABLES
 qualities = []
@@ -86,5 +87,33 @@ def genetic_algorithm(target_image, population):
                 
         
         #CROSSOVER
+        def crossover(parents, imgShape, nIndividuals = 8):
+           
+          #defining a blank array to hold the solutions after the crossover
+          new_population = np.empty(shape = (nIndividuals, functools.reduce(operator.mul, imgShape)), dtype = np.uint8)
+
+          #storing parents for the crossover operation
+          new_population[0:parents.shape[0], :] = parents
+
+          #number of offspring to be generated
+          num_newly_generated = nIndividuals - parents.shape[0]
+
+          #all permutations for the parents selected
+          parents_permutations = list(itertools.permutations(iterable = np.arrange(0, parents.shape[0]), r =2))
+          #selecting some parents randomly from the permutations, was random, don't know if randint will work
+          selected_permutations = randint.sample(range(len(parents_permutations)), num_newly_generated)
+
+          comb_idx = parents.shape[0]
+          for comb in range(len(selected_permutations)):
+            #Generating the offspring using the permutations previously selected randomly
+            selected_comb_idx = selected_permutations[comb]
+            selected_comb = parents_permutations[selected_comb_idx]
+
+            #crossover by 1/50th or 2 genes between 2 parents
+            cross_size = np.int32(new_population.shape[1]/50)
+            new_population[comb_idx + comb, 0:cross_size] = parents[selected_comb[0], 0:cross_size]
+            new_population[comb_idx + comb, cross_size:] = parents[selected_comb[1], cross_size:]
+
+          return new_population
         
         #MUTATION
