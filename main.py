@@ -80,11 +80,20 @@ def selection(population, qualities, num_parents):
 #MUTATION
 #iterations through each individual in the pop and each gene in the chromossome
 def mutation(population):
-  mutated_population = np.copy(population).astype(np.float64)
+  #create a mask to determine which genes will be mutated
   mutation_mask = np.random.rand(*population.shape) < mutation_probability
-  mutated_population[mutation_mask] += np.random.normal(0, 12.75, size=mutated_population[mutation_mask].shape)
+
+  #generate random values for mutation
+  mutation_values = np.random.normal(0, 12.75, size=population.shape)
+
+  #apply mutation to the population based on the mutation mask
+  mutated_population = population + mutation_values * mutation_mask
+
+  #clip the values to ensure they remain within the valid range of 0 to 255
   mutated_population = np.clip(mutated_population, 0, 255).astype(np.uint8)
+
   return mutated_population
+
 
 #CROSSOVER - uniform crossover 
 def crossover(parents, imgShape, nIndividuals = 8):
@@ -142,10 +151,10 @@ def genetic_algorithm(target_image, population):
     im = plt.imshow(best_individual, animated=True)
     ims.append([im])
 
-  ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
+  #Show the animation
+  ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000, repeat=False)
   plt.show()
-
-  plt.close()
+  
   return population
 
 #Initiate population
