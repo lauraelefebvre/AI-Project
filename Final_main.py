@@ -2,7 +2,7 @@
 #Applied AI Image Reconstruction Using a Genetic Algortihm
 
 import cv2 
-from random import randint
+from random import randint, seed
 import numpy as np
 
 
@@ -136,14 +136,14 @@ def genetic_algorithm(target_image, population):
     #replace current population with the mutated one
     population = mutated_population
 
-    if generation % 10 == 0:
-        print(f"Generation {generation + 1}/{num_generations} completed")
-        for indvChromo in population:
-            reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
-            cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
-            cv2.resizeWindow("Reconstructed Image", 500, 500)
-            cv2.imshow("Reconstructed Image", reconstructImg)
-            cv2.waitKey(100)
+    # if generation % 10 == 0:
+    #     print(f"Generation {generation + 1}/{num_generations} completed")
+    #     for indvChromo in population:
+    #         reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
+    #         cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
+    #         cv2.resizeWindow("Reconstructed Image", 500, 500)
+    #         cv2.imshow("Reconstructed Image", reconstructImg)
+    #         cv2.waitKey(100)
   
   return population
 
