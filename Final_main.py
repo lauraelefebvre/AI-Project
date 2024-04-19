@@ -41,7 +41,7 @@ def initialPop(target_image, nIndividuals=8):
     
   #Generate individuals from a normal distribution centered around the target image
   for i in range(nIndividuals):
-    #balck and white
+    #black and white
     banana = np.random.randint(0, 255, size=imgShape).astype(np.uint8)
     #127 e o meio
     banana[banana <= 127] =0  #white 
