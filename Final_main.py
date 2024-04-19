@@ -41,7 +41,7 @@ def initialPop(target_image, nIndividuals=8):
     
   #Generate individuals from a normal distribution centered around the target image
   for i in range(nIndividuals):
-    #black and white
+    #balck and white
     banana = np.random.randint(0, 255, size=imgShape).astype(np.uint8)
     #127 e o meio
     banana[banana <= 127] =0  #white 
@@ -135,6 +135,15 @@ def genetic_algorithm(target_image, population):
     
     #replace current population with the mutated one
     population = mutated_population
+
+    if generation % 10 == 0:
+        print(f"Generation {generation + 1}/{num_generations} completed")
+        for indvChromo in population:
+            reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
+            cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("Reconstructed Image", 500, 500)
+            cv2.imshow("Reconstructed Image", reconstructImg)
+            cv2.waitKey(100)
   
   return population
 
