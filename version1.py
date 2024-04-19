@@ -1,5 +1,6 @@
 #AI project
 #Applied AI Image Reconstruction Using a Genetic Algortihm
+#DOESNT WORK
 
 import cv2 
 from random import randint, seed
