@@ -99,13 +99,15 @@ def crossover(parents, imgShape, nIndividuals = 8):
     new_population[i,:,:] = offspring
   return new_population
 
+#selecting the best individuals in the current generation as parents for producing the offspring of the next generation
 def selectMatingPool(population, fitness, num_parents):
-  # Selecting the best individuals in the current generation as parents for producing the offspring of the next generation.
   parents = np.empty((num_parents, population.shape[1], population.shape[2]))
+  
   for parent_num in range(num_parents):
     max_fitness_idx = np.where(fitness == np.max(fitness))
     max_fitness_idx = max_fitness_idx[0][0]
     parents[parent_num, :, :] = population[max_fitness_idx, :, :]
+    #updating the fitness score to a low value to prevent selecting it again
     fitness[max_fitness_idx] = -99999999999
   return parents
   
@@ -119,8 +121,8 @@ def genetic_algorithm(target_image, population):
     print("Error: Image not loaded.")
     return population
   
-  fig = plt.figure()
-  ims=[]
+  fig = plt.figure() #creating figure object
+  ims=[] #empty list to store the images
   
   target_vector = img2vector(target_image)
   for generation in range(num_generations):
@@ -129,12 +131,13 @@ def genetic_algorithm(target_image, population):
     parents = selectMatingPool(population, fitness_scores, num_parents)
     new_population = crossover(parents, population.shape[1:])
     new_population = mutation(new_population)
-    # Elitism: keep the best individual from the current population
+    
+    #highest fitness score in current population.
     best_individual_idx = np.argmax(fitness_scores)
     new_population[0] = population[best_individual_idx]
     population = new_population
 
-    # Add the best individual of this generation to the animation
+    #add the best individual of this generation to the animation
     best_individual = convert2img(population[best_individual_idx], (M, N)).astype(np.uint8)
     im = plt.imshow(best_individual, animated=True)
     ims.append([im])
@@ -142,19 +145,20 @@ def genetic_algorithm(target_image, population):
   ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
   plt.show()
 
+  plt.close()
   return population
 
-#Comecar o inicio da populacao
+#Initiate population
 population = initialPop(face, chromoPerPop)
 
 faceVector = img2vector(face)
 
-#Execucao do algoritmo
+#Execution of the algorithm
 num_parents = 4
 population = genetic_algorithm(faceVector, population)
 
   
-#Display o resultado 
+#Display the result
 for indvChromo in population:
   reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
   reconstructImgResizing = cv2.resize(reconstructImg, None, fx=5,fy=5, interpolation=cv2.INTER_LINEAR)
