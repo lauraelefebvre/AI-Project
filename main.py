@@ -19,7 +19,11 @@ num_generations = 500
 
 
 #IMAGE MANIPULATION
-face = cv2.imread('face.png', cv2.IMREAD_GRAYSCALE)
+#load the target image
+imageRequest = input("Enter your image: ")
+face = cv2.imread(imageRequest, cv2.IMREAD_GRAYSCALE)
+
+#face = cv2.imread('face.png', cv2.IMREAD_GRAYSCALE)
 target_shape = face.shape
 
 #Converting the 2D image array to a 1D vector
