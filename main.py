@@ -1,164 +1,179 @@
 #AI project
 #Applied AI Image Reconstruction Using a Genetic Algortihm
 
+#import necessary libraries
 import cv2 
-from random import randint, seed
-import functools
-import operator
+from random import randint
 import numpy as np
-import itertools
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from skimage.metrics import structural_similarity as ssim
 
 #GLOBAL VARIABLES
-qualities = []
 numParentsMating = 3
-mutationPercent = 2
-#chromosomes per population
-solPerPop = 8
+chromoPerPop = 100 #chromosomes per population
 M = 10 #width
 N = 10 #height
-mutation_probability = 0.1
-num_generations = 200
+mutation_probability = 1
+num_generations = 500
 
 
 #IMAGE MANIPULATION
-#Load the target image
-#imageRequest = input("Enter your image: ")
-#image = cv2.imread(imageRequest)
-
-#Display the target image
-#windowName = 'image'
-#cv2.imshow(windowName, image)
-#cv2.waitKey(0)
-
-#Load the image
-#face = cv2.imread('face.png')
-#face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
 face = cv2.imread('face.png', cv2.IMREAD_GRAYSCALE)
+target_shape = face.shape
 
 #Converting the 2D image array to a 1D vector
 def img2vector(img_arr):
-  #fv = [val for sublist in img_arr for val in sublist]
-  #fv = np.reshape(a = img_arr, newshape = (functools.reduce(operator.mul, img_arr.shape)))
-  #return fv
   return img_arr.flatten()/255.0
-
+ 
 #Storing face vector in a variable
-faceVector = img2vector(face) #/255 #0-black, 255-white
+faceVector = img2vector(face) 
 
 #Converting the vector to the image
 #Convert to a matrix
 def convert2img(chromo, imgShape):
-  imgArr = np.reshape(chromo,imgShape)
-  return imgArr
+  imgArr = np.reshape(chromo,imgShape) *255.0
+  return imgArr.astype(np.uint8) #conversion of the pixels 
 
 #Initialize population
-def initialPop(imgShape, nIndividuals=8):
-  seed(1)
-  #init_population = np.random.randint(0, 2, size=(nIndividuals, imgShape[0] * imgShape[1]))
-  init_population = np.empty(shape = (nIndividuals, functools.reduce(operator.mul, imgShape)), dtype = np.uint8)
-  #without the loop part the code runs fine 
-  #for indv_num in range(nIndividuals):
-    #randomly generating inital population chromosome gene values
-    #init_population[indv_num, :] = randint(0, 2, M * N)
-  return init_population
+def initialPop(target_image, nIndividuals=8):
+  imgShape = target_image.shape
+    
+  #Initialize an empty population
+  population = np.zeros((nIndividuals, imgShape[0], imgShape[1]), dtype=np.uint8)
+    
+  #Generate individuals from a normal distribution centered around the target image
+  for i in range(nIndividuals):
+    #balck and white
+    individual = np.random.randint(0, 255, size=imgShape).astype(np.uint8)
+    population[i] = individual
+  return population
 
 #fitness function - calculates the error between a target chromosome and an individual chromosome
 def fitness_fun(target_chrom, indv_chrom):
-  #calculates mean squared error as fitness
-  #square difference between each pair and pairs elements.
-  #error = sum((x -y) **2 for x, y in zip(target_chrom, indv_chrom))/ len(target_chrom)
-  #return error
-  #return np.mean((target_chrom - indv_chrom)**2)
-  error =-1*np.sum(np.abs(indv_chrom-target_chrom))
-  return error
+  target_chrom_uint8 = (target_chrom * 255).astype(np.uint8)
+  indv_chrom_uint8 = (indv_chrom * 255).astype(np.uint8)
+  return cv2.PSNR(target_chrom_uint8, indv_chrom_uint8)
 
+def calculatePopFitness(target_chrom, pop):
+  qualities = np.zeros(pop.shape[0])
+  for indiv_num in range (pop.shape[0]):
+    indv_Chromo = pop[indiv_num].reshape(target_chrom.shape)
+    qualities[indiv_num] = fitness_fun(target_chrom, indv_Chromo)
+  return qualities
+
+#SELECTION
+def selection(population, qualities, num_parents):
+  selected_parents = np.empty((numParentsMating, *population.shape[1:]), dtype=np.uint8)
+  
+  #doing the selection by ranking
+  selection_probs = qualities / np.sum(qualities)
+    
+  #selects parents based on their probability
+  selected_parents_indices = np.random.choice(np.arange(len(population)), size=num_parents, replace=False, p=selection_probs)
+    
+  #taking the selected parent chromossome
+  selected_parents = population[selected_parents_indices]
+    
+  return selected_parents
 
 #MUTATION
 #iterations through each individual in the pop and each gene in the chromossome
 def mutation(population):
-  mutated_population = np.copy(population)
-  for indexIndiv in range (mutated_population.shape[0]):
-    for indexGene in range (mutated_population.shape[1]):
-      if np.random.rand() < mutation_probability:
-        mutated_population[indexIndiv, indexGene] = 1 - mutated_population[indexIndiv, indexGene]
+  mutated_population = np.copy(population).astype(np.float64)
+  mutation_mask = np.random.rand(*population.shape) < mutation_probability
+  mutated_population[mutation_mask] += np.random.normal(0, 12.75, size=mutated_population[mutation_mask].shape)
+  mutated_population = np.clip(mutated_population, 0, 255).astype(np.uint8)
   return mutated_population
-      
+
+#CROSSOVER - uniform crossover 
+def crossover(parents, imgShape, nIndividuals = 8):
+  new_population = np.empty(shape=(chromoPerPop, imgShape[0], imgShape[1]), dtype=np.uint8)
+  
+  for i in range(chromoPerPop):
+    parent1 = parents[np.random.randint(parents.shape[0])]
+    parent2 = parents[np.random.randint(parents.shape[0])]
+    #bully = bollean(array of integers 0 and 1 whith the same shape as the image)
+    bully = np.random.randint(0, 2, size=imgShape).astype(np.bool_)
+    offspring = np.where(bully, parent1, parent2)
+    new_population[i,:,:] = offspring
+  return new_population
+
+def selectMatingPool(population, fitness, num_parents):
+  # Selecting the best individuals in the current generation as parents for producing the offspring of the next generation.
+  parents = np.empty((num_parents, population.shape[1], population.shape[2]))
+  for parent_num in range(num_parents):
+    max_fitness_idx = np.where(fitness == np.max(fitness))
+    max_fitness_idx = max_fitness_idx[0][0]
+    parents[parent_num, :, :] = population[max_fitness_idx, :, :]
+    fitness[max_fitness_idx] = -99999999999
+  return parents
+  
+def img2vector(image):
+  return image.flatten()[np.newaxis, :]
+  
+
 #GENETIC ALGORITHM FUNCTION
 def genetic_algorithm(target_image, population):
-  for generation in range (num_generations):
-      
-    #SELECTION
-    fitness_scores = [fitness_fun(target_image, indv_chrom) for indv_chrom in population]
-    #Parents based on the fitness scores
-    parents = []
-    for i in range(numParentsMating):
-      #2 random indices/individuals in the population
-      parent_indices = [randint(0, len(population) -1 )for i in range(2)]
-      parent1 = population[parent_indices[0]]
-      parent2 = population[parent_indices[1]]
-      #comparisson between the scores of the 2 prents. Finds the best pair.
-      if fitness_scores[parent_indices[0]] < fitness_scores[parent_indices[1]]:
-        parents.append(parent1)
-      else:
-        parents.append(parent2)
-                
-        
-    #CROSSOVER
-    def crossover(parents, imgShape, nIndividuals = 8):
-           
-      #defining a blank array to hold the solutions after the crossover
-      new_population = np.empty(shape = (nIndividuals, functools.reduce(operator.mul, imgShape)), dtype = np.uint8)
-
-      #storing parents for the crossover operation
-      new_population[0:parents.shape[0], :] = parents
-
-      #number of offspring to be generated
-      num_newly_generated = nIndividuals - parents.shape[0]
-
-      #all permutations for the parents selected
-      parents_permutations = list(itertools.permutations(iterable = np.arrange(0, parents.shape[0]), r =2))
-      #selecting some parents randomly from the permutations, was random, don't know if randint will work
-      selected_permutations = randint.sample(range(len(parents_permutations)), num_newly_generated)
-
-      comb_idx = parents.shape[0]
-      for comb in range(len(selected_permutations)):
-        #Generating the offspring using the permutations previously selected randomly
-        selected_comb_idx = selected_permutations[comb]
-        selected_comb = parents_permutations[selected_comb_idx]
-
-        #crossover by 1/50th or 2 genes between 2 parents
-        cross_size = np.int32(new_population.shape[1]/50)
-        new_population[comb_idx + comb, 0:cross_size] = parents[selected_comb[0], 0:cross_size]
-        new_population[comb_idx + comb, cross_size:] = parents[selected_comb[1], cross_size:]
-          
-      return new_population
-      
-    #Mutation
-    mutated_population = mutation(population)
-      
-    #replace current pop with the mutated one
-    population = mutated_population
+  if target_image is None:
+    print("Error: Image not loaded.")
+    return population
   
+  fig = plt.figure()
+  ims=[]
+  
+  target_vector = img2vector(target_image)
+  for generation in range(num_generations):
+    print("Generation: ", generation)
+    fitness_scores = calculatePopFitness(target_vector, population)
+    parents = selectMatingPool(population, fitness_scores, num_parents)
+    new_population = crossover(parents, population.shape[1:])
+    new_population = mutation(new_population)
+    # Elitism: keep the best individual from the current population
+    best_individual_idx = np.argmax(fitness_scores)
+    new_population[0] = population[best_individual_idx]
+    population = new_population
+
+    # Add the best individual of this generation to the animation
+    best_individual = convert2img(population[best_individual_idx], (M, N)).astype(np.uint8)
+    im = plt.imshow(best_individual, animated=True)
+    ims.append([im])
+
+  ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
+  plt.show()
+
   return population
 
-
 #Comecar o inicio da populacao
-population = initialPop((M, N), solPerPop)
+population = initialPop(face, chromoPerPop)
+
+faceVector = img2vector(face)
 
 #Execucao do algoritmo
-for generation in range(num_generations):
-  population = genetic_algorithm(faceVector, population)
-  #print generations
-  print (f"generation {generation +1}/{num_generations} completed")
+num_parents = 4
+population = genetic_algorithm(faceVector, population)
+
   
 #Display o resultado 
 for indvChromo in population:
   reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
   reconstructImgResizing = cv2.resize(reconstructImg, None, fx=5,fy=5, interpolation=cv2.INTER_LINEAR)
-
-cv2.imshow("Reconstructed Image", reconstructImgResizing)
-cv2.waitKey(0)
+  plt.figure(figsize=(5,5))
+  plt.imshow(cv2.cvtColor(reconstructImgResizing, cv2.COLOR_BGR2RGB))
   
+cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Reconstructed Image", 500,500)
+cv2.imshow("Reconstructed Image", reconstructImg)
+cv2.waitKey(0)
+
+
+#TESTING
+print("Size of the resized image: ", reconstructImg.shape)
+print("Data type of the resized image: ", reconstructImg.dtype)
+
+#pixel values in the resized image
+print("Min pixel value: ", np.min(reconstructImg))
+print("Max pixel value:", np.max(reconstructImg))
+
+
 print("END")
-
-
