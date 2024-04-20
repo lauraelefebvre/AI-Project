@@ -7,7 +7,7 @@ from random import randint
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from skimage.metrics import structural_similarity
+#from skimage.metrics import structural_similarity
 
 #GLOBAL VARIABLES
 numParentsMating = 3
