@@ -168,14 +168,15 @@ population = genetic_algorithm(faceVector, population)
 #Display the result
 for indvChromo in population:
   reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
+  plt.imshow(cv2.cvtColor(reconstructImg, cv2.COLOR_BGR2RGB))
   reconstructImgResizing = cv2.resize(reconstructImg, None, fx=5,fy=5, interpolation=cv2.INTER_LINEAR)
   plt.figure(figsize=(5,5))
-  plt.imshow(cv2.cvtColor(reconstructImgResizing, cv2.COLOR_BGR2RGB))
   
-cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("Reconstructed Image", 500,500)
-cv2.imshow("Reconstructed Image", reconstructImg)
-cv2.waitKey(0)
+#this was to create the final image using opencv, later stopped using
+# cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
+# cv2.resizeWindow("Reconstructed Image", 500,500)
+# cv2.imshow("Reconstructed Image", reconstructImg)
+# cv2.waitKey(0)
 
 
 #TESTING
