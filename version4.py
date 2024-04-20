@@ -16,7 +16,7 @@ num_generations = 1001
 
 
 #IMAGE MANIPULATION
-face = cv2.imread('heart.png', cv2.IMREAD_GRAYSCALE)
+face = cv2.imread('testImages/heart.png', cv2.IMREAD_GRAYSCALE)
 target_shape = face.shape
 
 #Converting the 2D image array to a 1D vector
