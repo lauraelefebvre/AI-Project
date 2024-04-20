@@ -157,7 +157,10 @@ for indvChromo in population:
   reconstructImg = convert2img(indvChromo, (M, N)).astype(np.uint8)
   reconstructImgResizing = cv2.resize(reconstructImg, None, fx=5,fy=5, interpolation=cv2.INTER_LINEAR)
 
-cv2.imshow("Reconstructed Image", reconstructImgResizing)
+
+cv2.namedWindow("Reconstructed Image", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("Reconstructed Image", 500,500)
+cv2.imshow("Reconstructed Image", reconstructImg)
 cv2.waitKey(0)
   
 print("END")

@@ -22,8 +22,6 @@ num_generations = 500
 #load the target image
 imageRequest = input("Enter your image: ")
 face = cv2.imread(imageRequest, cv2.IMREAD_GRAYSCALE)
-
-#face = cv2.imread('face.png', cv2.IMREAD_GRAYSCALE)
 target_shape = face.shape
 
 #Converting the 2D image array to a 1D vector
@@ -59,6 +57,7 @@ def fitness_fun(target_chrom, indv_chrom):
   indv_chrom_uint8 = (indv_chrom * 255).astype(np.uint8)
   return cv2.PSNR(target_chrom_uint8, indv_chrom_uint8)
 
+#calculates the fitness of each individual
 def calculatePopFitness(target_chrom, pop):
   qualities = np.zeros(pop.shape[0])
   for indiv_num in range (pop.shape[0]):
@@ -72,10 +71,8 @@ def selection(population, qualities, num_parents):
   
   #doing the selection by ranking
   selection_probs = qualities / np.sum(qualities)
-    
   #selects parents based on their probability
   selected_parents_indices = np.random.choice(np.arange(len(population)), size=num_parents, replace=False, p=selection_probs)
-    
   #taking the selected parent chromossome
   selected_parents = population[selected_parents_indices]
     
@@ -86,13 +83,10 @@ def selection(population, qualities, num_parents):
 def mutation(population):
   #create a mask to determine which genes will be mutated
   mutation_mask = np.random.rand(*population.shape) < mutation_probability
-
   #generate random values for mutation
   mutation_values = np.random.normal(0, 12.75, size=population.shape)
-
   #apply mutation to the population based on the mutation mask
   mutated_population = population + mutation_values * mutation_mask
-
   #clip the values to ensure they remain within the valid range of 0 to 255
   mutated_population = np.clip(mutated_population, 0, 255).astype(np.uint8)
 
@@ -124,6 +118,7 @@ def selectMatingPool(population, fitness, num_parents):
     fitness[max_fitness_idx] = -99999999999
   return parents
   
+
 def img2vector(image):
   return image.flatten()[np.newaxis, :]
   
@@ -163,7 +158,6 @@ def genetic_algorithm(target_image, population):
 
 #Initiate population
 population = initialPop(face, chromoPerPop)
-
 faceVector = img2vector(face)
 
 #Execution of the algorithm
